@@ -27,8 +27,6 @@ On the client we subscribe to the collection_count
 ```
 Meteor.collection_count = new Meteor.Collection("collection_count");
 
-Meteor.subscribe('collection_count');
-
 Template.items.onCreated(function(){
   const instance = this;
   instance.skip = 0
