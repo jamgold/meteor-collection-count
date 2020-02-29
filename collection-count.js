@@ -27,7 +27,7 @@ if(Meteor.isClient) {
     Meteor.collection_count._ensureIndex({ connectionId: 1 });
   });
 
-  Meteor.collectionCount = (subscription, cursor) => {
+  Meteor.collectionCount = (subscription, cursor, addIds = false) => {
     check(subscription?.constructor?.name, 'Subscription');
     check(cursor?.constructor?.name, 'Cursor');
     const connectionId = subscription.connection.id;
@@ -39,9 +39,31 @@ if(Meteor.isClient) {
     const collection = collections.filter((c) => {return c.s.name == collectionName});
     const maxCount = collection.length == 1 ? collection[0].find(cursorDescription.selector).count().await() : -1;
     if ( Meteor.isDevelopment ) {
-      console.log(`Meteor.CollectionCount ${subscriptionName} ${connectionId}`, maxCount);
+      console.log(`Meteor.CollectionCount ${subscriptionName} ${connectionId} ${maxCount} addIds=${addIds}`);
     }
-    Meteor.collection_count.upsert({ connectionId: connectionId, subscriptionName: subscriptionName }, { connectionId: connectionId, subscriptionName: subscriptionName, maxCount: maxCount })
+    if(addIds) {
+      const ids = cursor.fetch().map((r) => {return r._id});
+      Meteor.collection_count.upsert(
+        { connectionId: connectionId, subscriptionName: subscriptionName }
+        ,
+        {
+          connectionId: connectionId,
+          subscriptionName: subscriptionName,
+          maxCount: maxCount,
+          ids: ids
+        }
+      )
+    } else {
+      Meteor.collection_count.upsert(
+        { connectionId: connectionId, subscriptionName: subscriptionName }
+        ,
+        {
+          connectionId: connectionId,
+          subscriptionName: subscriptionName,
+          maxCount: maxCount
+        }
+      )
+    }
     return cursor;
   }
 }

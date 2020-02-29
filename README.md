@@ -4,6 +4,12 @@
 ### Server side
 
 On your server publications, instead of returning the cursor directly, use the new Meteor.collectionCount method
+
+Function signature
+```
+Meteor.collectionCount(publication, cursor, addIds = false)
+```
+We publish with collectionCount
 ```
 Meteor.publish('items', function(query={}, skip=0){
   const self = this;
@@ -11,7 +17,7 @@ Meteor.publish('items', function(query={}, skip=0){
      limit:10,
      skip: skip,
      sort:{number:1}
-  }));
+  }), true);
 });
 ```
 ### Client Side
@@ -30,7 +36,7 @@ Template.items.onCreated(function(){
   
   instance.autorun(function(){
     const c = Meteor.collection_count.findOne({ subscriptionName: 'items' });
-    console.log(`items maxCount = ${c?.maxCount}`);
+    console.log(`items maxCount = ${c?.maxCount}`, c?.ids);
   })
 });
 ```
