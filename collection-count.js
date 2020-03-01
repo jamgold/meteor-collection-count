@@ -8,8 +8,11 @@ Meteor.CollectionCount = {
 
 if(Meteor.isClient) {
   Meteor.subscribe('collection_count');
-  Meteor.CollectionCount.get = function (subscriptionName) {
-    return Meteor.CollectionCount.connections.findOne({subscriptionName: subscriptionName});
+  Meteor.CollectionCount.get = function (subscriptionName,collectionName) {
+    const query = collectionName == undefined
+      ? { subscriptionName: subscriptionName }
+      : { subscriptionName: subscriptionName, collectionName: collectionName }
+    return Meteor.CollectionCount.connections.findOne(query);
   }
   if (Meteor.CollectionCount.compatibility) {
     Meteor.collection_count = Meteor.CollectionCount.connections;
@@ -51,8 +54,8 @@ if(Meteor.isClient) {
     if (Meteor.CollectionCount.debug ) {
       console.log(`Meteor.CollectionCount.publish ${subscriptionName} ${connectionId} ${maxCount} addIds=${addIds}`);
     }
-    const query = { connectionId: connectionId, subscriptionName: subscriptionName };
-    const upsert = { connectionId: connectionId, subscriptionName: subscriptionName, maxCount: maxCount };
+    const query = { connectionId: connectionId, subscriptionName: subscriptionName, collectionName: collectionName };
+    const upsert = { connectionId: connectionId, subscriptionName: subscriptionName, collectionName: collectionName, maxCount: maxCount };
 
     if(addIds) {
       upsert.ids = cursor.fetch().map((r) => {return r._id});
