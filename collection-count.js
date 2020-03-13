@@ -3,7 +3,17 @@ import { check } from 'meteor/check';
 Meteor.CollectionCount = {
   connections: new Meteor.Collection("collection_count"),
   debug: false,
-  compatibility: true,
+  backwardsCompatibility: true,
+  makeBackwardsCompatible(){
+    if(Meteor.isClient) {
+      Meteor.collection_count = Meteor.CollectionCount.connections;
+    } else {
+      Meteor.collectionCount = (subscription, cursor, addIds = false) => {
+        console.log(`This function is deprecated, please use Meteor.CollectionCount.publish instead`)
+        return Meteor.CollectionCount.publish(subscription, cursor, addIds);
+      }
+    }
+  }
 };
 
 if(Meteor.isClient) {
@@ -14,12 +24,15 @@ if(Meteor.isClient) {
       : { subscriptionName: subscriptionName, collectionName: collectionName }
     return Meteor.CollectionCount.connections.findOne(query);
   }
-  if (Meteor.CollectionCount.compatibility) {
-    Meteor.collection_count = Meteor.CollectionCount.connections;
+  if (Meteor.CollectionCount.backwardsCompatibility) {
+    Meteor.CollectionCount.makeBackwardsCompatible()
   }
 } else {
   Meteor.publish('collection_count', function () {
     const self = this;
+    if(Meteor.CollectionCount.debug) {
+      console.log(`Meteor.CollectionCount publishing collection_count for ${self.connection.id}`)
+    }
     return Meteor.CollectionCount.connections.find({ connectionId: self.connection.id });
   });
 
@@ -49,10 +62,13 @@ if(Meteor.isClient) {
     const collectionName = cursorDescription.collectionName;
     const db = cursor._mongo.db;
     const collections = db.collections().await();
-    const collection = collections.filter((c) => {return c.s.name == collectionName});
+    const collection = collections.filter((c) => {
+      const name = c.s.name ? c.s.name : c.s.namespace.collection;
+      return name == collectionName
+    });
     const maxCount = collection.length == 1 ? collection[0].find(cursorDescription.selector).count().await() : -1;
     if (Meteor.CollectionCount.debug ) {
-      console.log(`Meteor.CollectionCount.publish ${subscriptionName} ${connectionId} ${maxCount} addIds=${addIds}`);
+      console.log(`Meteor.CollectionCount.publish ${subscriptionName} ${connectionId} maxCount=${maxCount} addIds=${addIds}`);
     }
     const query = { connectionId: connectionId, subscriptionName: subscriptionName, collectionName: collectionName };
     const upsert = { connectionId: connectionId, subscriptionName: subscriptionName, collectionName: collectionName, maxCount: maxCount };
@@ -64,10 +80,7 @@ if(Meteor.isClient) {
 
     return cursor;
   }
-  if (Meteor.CollectionCount.compatibility) {
-    Meteor.collectionCount = (subscription, cursor, addIds = false) => {
-      console.log(`This function is deprecated, please use Meteor.CollectionCount.publish instead`)
-      return Meteor.CollectionCount.publish(subscription, cursor, addIds);
-    }
+  if (Meteor.CollectionCount.backwardsCompatibility) {
+    Meteor.CollectionCount.makeBackwardsCompatible();
   }
 }

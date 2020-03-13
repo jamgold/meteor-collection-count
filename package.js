@@ -1,6 +1,6 @@
 Package.describe({
   name: 'jamgold:meteor-collection-count',
-  version: '0.0.5',
+  version: '0.0.6',
   // Brief, one-line summary of the package.
   summary: 'Provide Meteor.collectionCount function',
   // URL to the Git repository containing the source code for this package.
